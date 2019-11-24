@@ -1,0 +1,8 @@
+{
+    "Gaussian_kernel_size": 3,
+    "Gaussian_sigma":1,
+
+    "Mean_kernel_size":3,
+    
+    "Median_kernal_size":3
+}
