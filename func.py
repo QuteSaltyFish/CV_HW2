@@ -5,7 +5,7 @@ from PIL import Image
 import torchvision as tv
 from torchvision import transforms
 import json
-
+from time import time
 
 class hw2():
     def __init__(self, dir, DEVICE=None):
@@ -36,7 +36,7 @@ class hw2():
             data = t.nn.ConstantPad2d(padding, 2)(self.img_gray_tensor)
         else:
             data = t.nn.ConstantPad2d(padding, 2)(new_data)
-        print(data)
+        # print(data)
         output = t.zeros([data.shape[0], data.shape[1]-kernal_size[0]+1,
                           data.shape[2]-kernal_size[1]+1], dtype=t.float).to(self.DEVICE)
 
@@ -63,7 +63,7 @@ class hw2():
             data = t.nn.ConstantPad2d(padding, -1)(self.img_gray_tensor)
         else:
             data = t.nn.ConstantPad2d(padding, -1)(new_data)
-        print(data)
+        # print(data)
         output = t.zeros([data.shape[0], data.shape[1]-kernal_size[0]+1,
                           data.shape[2]-kernal_size[1]+1], dtype=t.float).to(self.DEVICE)
 
@@ -189,3 +189,89 @@ class hw2():
             return out_img
         else:
             return grad
+
+    def Smooth(self, kernel, save_img=True, new_data=None):
+        output = self.Opening(kernel, save_img=False, new_data=new_data)
+        output = self.Closing(kernel, save_img=False, new_data=output)
+        if save_img:
+            out_img = transforms.ToPILImage()(soutput.cpu())
+            out_img.save('result/Smooth.gif')
+            return out_img
+        else:
+            return output
+
+    def to2(self, data, th=0.5):
+        data[data <= th] = 0
+        data[data >= th] = 1
+        return data
+
+    def MReconstruction(self, kernal,loop=4, save_img=True, new_data=None, th=0.5, noise= False):
+        if new_data is None:
+            data = self.to2(self.img_gray_tensor, th)
+        else:
+            data = self.to2(new_data,th)
+
+        noise = t.randn_like(data, device=self.DEVICE)*0.01
+        data  += noise
+        # Store the picture before the reconstruction
+        out_img=transforms.ToPILImage()(data.cpu())
+        out_img.save('result/Before_Reconstruction.gif')
+
+        M = self.to2(self.Opening(kernal, save_img=False, new_data=data))
+        assert (t.sum(M < 0) == 0)
+        assert (t.sum(M > 1) == 0)
+        while (True):
+            T = M
+
+            for i in range(loop):
+                M = self.to2(self.Dilate(kernal, False, M))
+                assert (t.sum(M < 0) == 0)
+                assert (t.sum(M > 1) == 0)
+            M = self.to2(M * data)
+            
+            criterion = t.sum(M != T)
+            print(criterion)
+            if t.sum(M != T) == 0:
+                break
+
+        if save_img:
+            out_img=transforms.ToPILImage()(M.cpu())
+            out_img.save('result/Reconstruction.gif')
+            return out_img
+        else:
+            return M
+
+
+if __name__ == "__main__":
+    start = time()
+    print("Start: " + str(start))
+    stop = time()
+    print("Stop: " + str(stop))
+    print(str(stop-start) + "秒")
+
+    passdata=t.tensor([
+        [209.0,  125,  191, 9, 168, 246, 158, 14],
+        [232, 205, 101, 113, 42, 141, 122, 136],
+        [33, 37, 168, 98, 31, 36, 91, 200],
+        [234, 108, 44, 196, 128, 39, 213, 240],
+        [162, 235, 181, 204, 246, 66, 150, 34],
+        [25, 203, 9, 48, 88, 216, 141, 146],
+        [72, 246, 71, 126, 150, 66, 235, 121]
+    ])/255
+    kernel=t.tensor([
+        [1, 1, 1],
+        [1, 1, 1],
+        [1, 1, 1]
+    ])/255.0
+    model=hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg', 'cpu')
+    # model.load_data(data)
+    # model.Erode(kernal)
+    # model.Dilate(kernal)
+    # model.edge_detection(kernal)
+    # model.Opening(kernal)
+    # model.Closing(kernal)
+    model.MReconstruction(kernel, th=0.45)
+
+    stop = time()
+    print("Stop: " + str(stop))
+    print(str(stop-start) + "秒")
