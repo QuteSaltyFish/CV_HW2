@@ -7,6 +7,7 @@ from torchvision import transforms
 import json
 from time import time
 
+
 class hw2():
     def __init__(self, dir, DEVICE=None):
         if DEVICE == None:
@@ -27,25 +28,25 @@ class hw2():
         file = open('config.json', "rb")
         self.config = json.load(file)
 
-    def Erode(self, kernal, save_img=True, new_data=None):
-        kernal = t.tensor(kernal, dtype=t.float, device=self.DEVICE)
-        kernal_size = kernal.shape
-        padding = [kernal_size[0]//2, kernal_size[0] //
-                   2, kernal_size[1]//2, kernal_size[1]//2]
+    def Erode(self, kernel, save_img=True, new_data=None):
+        kernel = t.tensor(kernel, dtype=t.float, device=self.DEVICE)
+        kernel_size = kernel.shape
+        padding = [kernel_size[0]//2, kernel_size[0] //
+                   2, kernel_size[1]//2, kernel_size[1]//2]
         if new_data is None:
             data = t.nn.ConstantPad2d(padding, 2)(self.img_gray_tensor)
         else:
             data = t.nn.ConstantPad2d(padding, 2)(new_data)
         # print(data)
-        output = t.zeros([data.shape[0], data.shape[1]-kernal_size[0]+1,
-                          data.shape[2]-kernal_size[1]+1], dtype=t.float).to(self.DEVICE)
+        output = t.zeros([data.shape[0], data.shape[1]-kernel_size[0]+1,
+                          data.shape[2]-kernel_size[1]+1], dtype=t.float).to(self.DEVICE)
 
         for k in range(output.shape[0]):
             for i in range(output.shape[1]):
                 for j in range(output.shape[2]):
                     # print(data[k,i-1:i+1,j-1:j+1])
                     output[k, i, j] = t.min(
-                        data[k, i:i+kernal_size[0], j:j+kernal_size[1]]-kernal)
+                        data[k, i:i+kernel_size[0], j:j+kernel_size[1]]-kernel)
         if save_img:
             out_img = transforms.ToPILImage()(output.cpu())
             out_img.save('result/Erode.gif')
@@ -53,26 +54,26 @@ class hw2():
         else:
             return output
 
-    def Dilate(self, kernal, save_img=True, new_data=None):
-        kernal = t.tensor(kernal, dtype=t.float, device=self.DEVICE)
-        kernal_size = kernal.shape
-        padding = [kernal_size[0] // 2, kernal_size[0] //
-                   2, kernal_size[1] // 2, kernal_size[1] // 2]
+    def Dilate(self, kernel, save_img=True, new_data=None):
+        kernel = t.tensor(kernel, dtype=t.float, device=self.DEVICE)
+        kernel_size = kernel.shape
+        padding = [kernel_size[0] // 2, kernel_size[0] //
+                   2, kernel_size[1] // 2, kernel_size[1] // 2]
 
         if new_data is None:
             data = t.nn.ConstantPad2d(padding, -1)(self.img_gray_tensor)
         else:
             data = t.nn.ConstantPad2d(padding, -1)(new_data)
         # print(data)
-        output = t.zeros([data.shape[0], data.shape[1]-kernal_size[0]+1,
-                          data.shape[2]-kernal_size[1]+1], dtype=t.float).to(self.DEVICE)
+        output = t.zeros([data.shape[0], data.shape[1]-kernel_size[0]+1,
+                          data.shape[2]-kernel_size[1]+1], dtype=t.float).to(self.DEVICE)
 
         for k in range(output.shape[0]):
             for i in range(output.shape[1]):
                 for j in range(output.shape[2]):
                     # print(data[k,i-1:i+1,j-1:j+1])
                     output[k, i, j] = t.max(
-                        data[k, i:i+kernal_size[0], j:j+kernal_size[1]]+kernal)
+                        data[k, i:i+kernel_size[0], j:j+kernel_size[1]]+kernel)
         if save_img:
             out_img = transforms.ToPILImage()(output.cpu())
             out_img.save('result/Dilate.gif')
@@ -80,9 +81,9 @@ class hw2():
         else:
             return output
 
-    def Opening(self, kernal, save_img=True, new_data=None):
-        output = self.Erode(kernal, save_img=False, new_data=new_data)
-        output = self.Dilate(kernal, save_img=False, new_data=output)
+    def Opening(self, kernel, save_img=True, new_data=None):
+        output = self.Erode(kernel, save_img=False, new_data=new_data)
+        output = self.Dilate(kernel, save_img=False, new_data=output)
         if save_img:
             out_img = transforms.ToPILImage()(output.cpu())
             out_img.save('result/Opening.gif')
@@ -90,9 +91,9 @@ class hw2():
         else:
             return output
 
-    def Closing(self, kernal, save_img=True, new_data=None):
-        output = self.Dilate(kernal, save_img=False, new_data=new_data)
-        output = self.Erode(kernal, save_img=False, new_data=output)
+    def Closing(self, kernel, save_img=True, new_data=None):
+        output = self.Dilate(kernel, save_img=False, new_data=new_data)
+        output = self.Erode(kernel, save_img=False, new_data=output)
         if save_img:
             out_img = transforms.ToPILImage()(output.cpu())
             out_img.save('result/Closing.gif')
@@ -205,41 +206,54 @@ class hw2():
         data[data >= th] = 1
         return data
 
-    def MReconstruction(self, kernal,loop=4, save_img=True, new_data=None, th=0.5, noise= False):
+    def MReconstruction(self, kernel, loop=4, save_img=True, new_data=None, th=0.5, noise=False):
         if new_data is None:
             data = self.to2(self.img_gray_tensor, th)
         else:
-            data = self.to2(new_data,th)
+            data = self.to2(new_data, th)
 
         noise = t.randn_like(data, device=self.DEVICE)*0.01
-        data  += noise
+        data += noise
         # Store the picture before the reconstruction
-        out_img=transforms.ToPILImage()(data.cpu())
+        out_img = transforms.ToPILImage()(data.cpu())
         out_img.save('result/Before_Reconstruction.gif')
 
-        M = self.to2(self.Opening(kernal, save_img=False, new_data=data))
+        M = self.to2(self.Opening(kernel, save_img=False, new_data=data))
         assert (t.sum(M < 0) == 0)
         assert (t.sum(M > 1) == 0)
         while (True):
             T = M
 
             for i in range(loop):
-                M = self.to2(self.Dilate(kernal, False, M))
+                M = self.to2(self.Dilate(kernel, False, M))
                 assert (t.sum(M < 0) == 0)
                 assert (t.sum(M > 1) == 0)
             M = self.to2(M * data)
-            
+
             criterion = t.sum(M != T)
             print(criterion)
             if t.sum(M != T) == 0:
                 break
 
         if save_img:
-            out_img=transforms.ToPILImage()(M.cpu())
+            out_img = transforms.ToPILImage()(M.cpu())
             out_img.save('result/Reconstruction.gif')
             return out_img
         else:
             return M
+
+    def Conditional_Dilate(self, condition, kernel, save_img=True, new_data=None):
+        out = self.Dilate(kernel, save_img=False, new_data=new_data)
+
+        condition = self.to2(condition)
+
+        out *= condition
+        if save_img:
+            out_img = transforms.ToPILImage()(out.cpu())
+            out_img.save('result/Conditional_Dilate.gif')
+            return out_img
+        else:
+            return out
 
 
 if __name__ == "__main__":
@@ -249,7 +263,7 @@ if __name__ == "__main__":
     print("Stop: " + str(stop))
     print(str(stop-start) + "秒")
 
-    passdata=t.tensor([
+    passdata = t.tensor([
         [209.0,  125,  191, 9, 168, 246, 158, 14],
         [232, 205, 101, 113, 42, 141, 122, 136],
         [33, 37, 168, 98, 31, 36, 91, 200],
@@ -257,21 +271,26 @@ if __name__ == "__main__":
         [162, 235, 181, 204, 246, 66, 150, 34],
         [25, 203, 9, 48, 88, 216, 141, 146],
         [72, 246, 71, 126, 150, 66, 235, 121]
-    ])/255
-    kernel=t.tensor([
+    ]) / 255
+    kernel = t.tensor([
         [1, 1, 1],
         [1, 1, 1],
         [1, 1, 1]
     ])/255.0
-    model=hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg', 'cpu')
+    model = hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg', 'cpu')
+    img = tv.transforms.ToTensor()(Image.open("/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg").convert('L'))
+    condition = t.zeros_like(img)
+    _, H, W = condition.shape
+    condition[0, H // 4:H * 3 // 4, W // 4:W * 3 // 4] = 1
+    print(t.sum(condition>0))
     # model.load_data(data)
     # model.Erode(kernal)
     # model.Dilate(kernal)
     # model.edge_detection(kernal)
     # model.Opening(kernal)
     # model.Closing(kernal)
-    model.MReconstruction(kernel, th=0.45)
-
+    # model.MReconstruction(kernel, th=0.45)
+    model.Conditional_Dilate(condition, kernel)
     stop = time()
     print("Stop: " + str(stop))
     print(str(stop-start) + "秒")
