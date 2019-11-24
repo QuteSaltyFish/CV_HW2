@@ -14,8 +14,10 @@ kernal = t.tensor([
     [1, 1, 1],
     [1, 1, 1]
 ])/255.0
-model = func.hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg')
+model = func.hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg', 'cpu')
 # model.load_data(data)
 model.Erode(kernal)
 model.Dilate(kernal)
 model.edge_detection(kernal)
+model.Opening(kernal)
+model.Closing(kernal)
