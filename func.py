@@ -56,6 +56,7 @@ class hw2():
 
     def Bi_Erode(self, kernel, save_img=True, new_data=None):
         kernel = t.tensor(kernel, dtype=t.float, device=self.DEVICE)
+        kernel[kernel>0]=1
         kernel_size = kernel.shape
         padding = [kernel_size[0]//2, kernel_size[0] //
                    2, kernel_size[1]//2, kernel_size[1]//2]
@@ -109,6 +110,7 @@ class hw2():
 
     def Bi_Dilate(self, kernel, save_img=True, new_data=None):
         kernel = t.tensor(kernel, dtype=t.float, device=self.DEVICE)
+        kernel[kernel>0]=1
         kernel_size = kernel.shape
         padding = [kernel_size[0] // 2, kernel_size[0] //
                    2, kernel_size[1] // 2, kernel_size[1] // 2]
@@ -338,10 +340,15 @@ if __name__ == "__main__":
         [72, 246, 71, 126, 150, 66, 235, 121]
     ]) / 255
     kernel = t.tensor([
-        [0, 0, 0],
-        [0, 1, 1],
+        [0, 1, 0],
+        [1, 1, 1],
         [0, 1, 0]
-    ])#/255.0
+    ])/255.0
+    kernel2 = t.tensor([
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 1, 0]
+    ])
     model = hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/Noised_img.gif', 'cpu')
     # model = hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg', 'cpu')
 
@@ -352,11 +359,13 @@ if __name__ == "__main__":
     # print(t.sum(condition>0))
     # # model.load_data(data)
     model.Erode(kernel)
+    model.Bi_Erode(kernel2)
     model.Dilate(kernel)
+    model.Bi_Dilate(kernel2)
     model.edge(kernel)
     model.Opening(kernel)
     model.Closing(kernel)
-    model.MReconstruction(kernel, th=0.45)
+    # model.MReconstruction(kernel, th=0.45)
     model.grad(kernel)
     # model.Conditional_Dilate(condition, kernel)
     stop = time()
