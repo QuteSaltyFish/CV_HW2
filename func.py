@@ -154,7 +154,7 @@ class hw2():
 
         if save_img:
             out_img = transforms.ToPILImage()(grad.cpu())
-            out_img.save('result/Edge_detection.gif')
+            out_img.save('result/grad.gif')
             return out_img
         else:
             return grad
@@ -164,13 +164,13 @@ class hw2():
             data = self.img_gray_tensor
         else:
             data = new_data
-        # pic_erode = self.Erode(kernel, False)
+        pic_erode = self.Erode(kernel, False)
         pic_dilate = self.Dilate(kernel, False)
         grad = pic_erode - data
 
         if save_img:
             out_img = transforms.ToPILImage()(grad.cpu())
-            out_img.save('result/Edge_detection_internal.gif')
+            out_img.save('result/grad_internal.gif')
             return out_img
         else:
             return grad
@@ -186,7 +186,7 @@ class hw2():
 
         if save_img:
             out_img = transforms.ToPILImage()(grad.cpu())
-            out_img.save('result/Edge_detection_internal.gif')
+            out_img.save('result/grad_internal.gif')
             return out_img
         else:
             return grad
@@ -195,7 +195,7 @@ class hw2():
         output = self.Opening(kernel, save_img=False, new_data=new_data)
         output = self.Closing(kernel, save_img=False, new_data=output)
         if save_img:
-            out_img = transforms.ToPILImage()(soutput.cpu())
+            out_img = transforms.ToPILImage()(output.cpu())
             out_img.save('result/Smooth.gif')
             return out_img
         else:
@@ -284,12 +284,13 @@ if __name__ == "__main__":
     condition[0, H // 4:H * 3 // 4, W // 4:W * 3 // 4] = 1
     print(t.sum(condition>0))
     # model.load_data(data)
-    # model.Erode(kernal)
-    # model.Dilate(kernal)
-    # model.edge_detection(kernal)
-    # model.Opening(kernal)
-    # model.Closing(kernal)
-    # model.MReconstruction(kernel, th=0.45)
+    model.Erode(kernel)
+    model.Dilate(kernel)
+    model.edge(kernel)
+    model.Opening(kernel)
+    model.Closing(kernel)
+    model.MReconstruction(kernel, th=0.45)
+    model.grad(kernel)
     model.Conditional_Dilate(condition, kernel)
     stop = time()
     print("Stop: " + str(stop))
