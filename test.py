@@ -1,5 +1,16 @@
 import func
 import torch as t
+
+from tkinter import *
+from tkinter import messagebox
+from tkinter import filedialog
+from func import hw2
+from PIL import Image, ImageTk
+import json 
+config = json.load(open('config.json'))
+DEVICE = config['DEVICE']
+root=Tk()
+
 data = t.tensor([
     [209.0,  125,  191, 9, 168, 246, 158, 14],
     [232, 205, 101, 113, 42, 141,122,136],
@@ -18,11 +29,113 @@ kernal = t.tensor([
 
 
 
+Height = 3
+Width = 3
+H_flag = False
+W_flag = False
+SE = None
+i,j=0,0
+def check_ready():
+    global Height, Width, H_flag, W_flag, SE
+    if H_flag and W_flag :
+        l1.config(text='Please Input SE')
+        l2.config(text='Please Input SE')
+        l3.config(text='Please Input SE[0,0], range [0,255]')
+        SE = t.zeros(Height, Width, device=DEVICE)
+        
 
-model = func.hw2('/home/wangmingke/Desktop/HomeWork/CV_HW2/src/img.jpg', 'cpu')
-# model.load_data(data)
-model.Erode(kernal)
-model.Dilate(kernal)
-model.edge_detection(kernal)
-model.Opening(kernal)
-model.Closing(kernal)
+def get_H():
+    try:
+        global Height, H_flag, W_flag
+        Height = int(e1.get())#获取e1的值，转为浮点数，如果不能转捕获异常
+        l1.config(text='H='+str(Height))
+        H_flag = True
+        check_ready()
+    except:
+        messagebox.showwarning('警告','请输入数字')
+
+def get_W():
+    try:
+        global Width, W_flag, H_flag
+        Width = int(e2.get())#获取e1的值，转为浮点数，如果不能转捕获异常
+        l2.config(text='W='+str(Width))
+        W_flag = True
+        check_ready()
+    except:
+        messagebox.showwarning('警告','请输入数字')
+
+def get_SE():
+    try:
+        global SE, Height, Width, i, j
+        SE[i,j] = float(e3.get())
+        if i==Height-1 and j==Width-1:
+            l3.config(text='Please Choose the pic')
+        else:
+            i = (i+(j+1)//Width)%Height
+            j =  (j+1)%Width
+            l3.config(text='Please Input SE[{},{}], range [0,255]'.format(i, j))
+        
+        
+    except:
+        messagebox.showwarning('警告','请输入数字')
+
+def printcoords():
+    global H_flag, W_flag, SE
+    l1.config(text='PLS WAIT')
+    l2.config(text='PLS WAIT')
+    l3.config(text='PLS WAIT')
+    # global kernal_size
+    # global sigma
+    File = filedialog.askopenfilename(title='Choose an image.')
+    pic = hw2(File)
+    pic.edge(SE/255)
+
+    # show the picture
+    filename = ImageTk.PhotoImage(Image.open('result/Edge_detection.gif'))
+    canvas.image = filename  # <--- keep reference of your image
+    canvas.create_image(0,0,anchor='nw',image=filename)
+
+    # reset the program
+    SE = None
+    H_flag = False
+    W_flag = False
+    l1.config(text='Pls input Height')
+    l2.config(text='Pls input Width')
+
+e1=Entry(root)
+e1.pack()
+Button(root,text='click',command=get_H).pack()
+l1=Label(root,text='Pls input Height')
+l1.pack()
+
+e2 = Entry(root)
+e2.pack()
+Button(root,text='click',command=get_W).pack()
+l2=Label(root,text='Pls input Width')
+l2.pack()
+
+e3 = Entry(root)
+e3.pack()
+Button(root,text='click',command=get_SE).pack()
+l3=Label(root,text='Pls input H and W')
+l3.pack()
+
+#setting up a tkinter canvas with scrollbars
+frame = Frame(root, bd=4, relief=SUNKEN)
+frame.grid_rowconfigure(0, weight=1)
+frame.grid_columnconfigure(0, weight=1)
+xscroll = Scrollbar(frame, orient=HORIZONTAL)
+xscroll.grid(row=1, column=0, sticky=E+W)
+yscroll = Scrollbar(frame)
+yscroll.grid(row=0, column=1, sticky=N+S)
+canvas = Canvas(frame, bd=0, xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
+canvas.grid(row=0, column=0, sticky=N+S+E+W)
+xscroll.config(command=canvas.xview)
+yscroll.config(command=canvas.yview)
+frame.pack(fill=BOTH,expand=1)
+
+
+#function to be called when mouse is clicked
+Button(root,text='choose',command=printcoords).pack()
+
+mainloop()
